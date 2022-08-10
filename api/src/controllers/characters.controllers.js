@@ -1,59 +1,107 @@
 const axios = require("axios");
-const { Character } = require("../db");
+const { Character, Episode } = require("../db");
 
+// Characters API ---------------------------------------------
 const getCharactersApi = async (req, res) => {
-  const quantity = 33;
+  const quantity = 60;
   let charactersApi = [];
 
-  let api = await axios.get("https://rickandmortyapi.com/api/character");
+  try {
+    let api = await axios.get("https://rickandmortyapi.com/api/character");
+    charactersApi = [...api.data.results];
 
-  charactersApi = [...api.data.results];
+    // Get more than 20 characters. Change value in constant quantity.
+    if (quantity > 20) {
+      let apiAux = api;
+      let residue = quantity % charactersApi.length;
 
-  if (quantity > 20) {
-    let apiAux = api;
-    let cantidad = quantity % charactersApi.length; //3
+      if (residue === 0) residue = undefined;
 
-    if (cantidad === 0) cantidad = undefined;
+      for (let i = 0; charactersApi.length < quantity; i++) {
+        let api2;
+        api2 = await axios.get(apiAux.data.info.next);
+        apiAux = api2;
 
-    for (let i = 0; charactersApi.length < quantity; i++) {
-      let api2;
-      api2 = await axios.get(apiAux.data.info.next);
-      apiAux = api2;
-      if (quantity - charactersApi.length < 20) {
-        charactersApi = [
-          ...charactersApi,
-          ...api2.data.results.slice(0, cantidad),
-        ];
-        break;
+        if (quantity - charactersApi.length < 20) {
+          charactersApi = [
+            ...charactersApi,
+            ...api2.data.results.slice(0, residue),
+          ];
+          break;
+        }
+
+        charactersApi = [...charactersApi, ...api2.data.results];
       }
-      charactersApi = [...charactersApi, ...api2.data.results];
     }
+
+    // Format
+    charactersApi = charactersApi.map((char) => {
+      const { id, name, species, origin, image, created } = char;
+      const obj = {
+        id,
+        name,
+        species,
+        origin: origin.name,
+        image,
+        created,
+      };
+
+      return obj;
+    });
+
+    return charactersApi;
+  } catch (error) {
+    console.log(`Error getting characters from API: ${error}`);
   }
-
-  charactersApi = charactersApi.map((char) => {
-    let obj = {
-      id: char.id,
-      name: char.name,
-      species: char.species,
-      origin: char.origin.name,
-      image: char.image,
-      created: char.created,
-    };
-
-    return obj;
-  });
-
-  return charactersApi;
 };
+//-------------------------------------------------------------
 
+// Characters DataBase ----------------------------------------
+const getCharactersDb = async () => {
+  try {
+    const charactersDb = await Character.findAll({
+      include: [{ model: Episode }],
+    });
+
+    return charactersDb;
+  } catch (error) {
+    console.log(`Error getting characters from database: ${error}`);
+  }
+};
+//-------------------------------------------------------------
+
+// GET All Characters - API + DB ------------------------------
 const getAllCharacters = async (req, res) => {
   const { name } = req.query;
 
-  if (name) return res.send({ name: name });
+  const apiCharacters = await getCharactersApi();
+  const dbCharacters = await getCharactersDb();
+  const allCharacters = [...apiCharacters, ...dbCharacters];
 
-  const allCharacters = await getCharactersApi();
+  try {
+    if (name) {
+      const nameFound = allCharacters.find(
+        (char) => char.name.toLowerCase() === name.toLowerCase()
+      );
 
-  return res.send(allCharacters);
+      if (nameFound) return res.send(nameFound);
+      else return res.send(`${name} character not found`);
+    }
+
+    return res.send(allCharacters);
+  } catch (error) {
+    return res
+      .status(400)
+      .send(
+        `An error occurred while trying to get all the characters. ${error}`
+      );
+  }
 };
+//-------------------------------------------------------------
+
+// POST Character
+// const postCharacter = async (req, res) => {
+//     const {name, species, origin, image, created} = req.body;
+// }
 
 module.exports = getAllCharacters;
