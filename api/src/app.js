@@ -2,7 +2,8 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
-const charactersRoutes = require("./routes/characters.routes.js");
+const charactersRouter = require("./routes/characters.routes.js");
+const episodesRouter = require("./routes/episodes.routes.js");
 
 require("./db.js");
 
@@ -25,7 +26,12 @@ server.use((req, res, next) => {
   next();
 });
 
-server.use("/", charactersRoutes);
+server.get("/", (req, res) => {
+  return res.send("Hello World");
+});
+
+server.use("/", charactersRouter);
+server.use("/", episodesRouter);
 
 // Error catching endware.
 server.use((err, req, res, next) => {
