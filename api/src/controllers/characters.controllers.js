@@ -85,7 +85,7 @@ const getAllCharacters = async (req, res) => {
       );
 
       if (nameFound) return res.send(nameFound);
-      else return res.send(`${name} character not found`);
+      else return res.status(404).send(`${name} character not found`);
     }
 
     return res.send(allCharacters);
@@ -99,9 +99,49 @@ const getAllCharacters = async (req, res) => {
 };
 //-------------------------------------------------------------
 
+// GET CHARACTER BY ID
+
+const getCharacterById = async (req, res) => {
+  const { idChar } = req.params;
+
+  const apiCharacters = await getCharactersApi();
+  const dbCharacters = await getCharactersDb();
+  const allCharacters = [...apiCharacters, ...dbCharacters];
+
+  try {
+    if (idChar) {
+      const idFound = allCharacters.find((char) => char.id == idChar);
+
+      if (idFound) return res.send(idFound);
+      else {
+        let characterId = await axios.get(
+          `https://rickandmortyapi.com/api/character/${idChar}`
+        );
+
+        let { id, name, species, origin, image, created } = characterId.data;
+
+        const obj = {
+          id,
+          name,
+          species,
+          origin: origin.name,
+          image,
+          created,
+        };
+
+        return res.send(obj);
+      }
+    }
+  } catch (error) {
+    return res
+      .status(404)
+      .send(`Character with id:${idChar} not found. ${error}`);
+  }
+};
+
 // POST Character
 // const postCharacter = async (req, res) => {
 //     const {name, species, origin, image, created} = req.body;
 // }
 
-module.exports = getAllCharacters;
+module.exports = { getAllCharacters, getCharacterById };
