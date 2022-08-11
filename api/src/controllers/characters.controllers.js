@@ -138,10 +138,27 @@ const getCharacterById = async (req, res) => {
       .send(`Character with id:${idChar} not found. ${error}`);
   }
 };
+//-------------------------------------------------------------
 
 // POST Character
-// const postCharacter = async (req, res) => {
-//     const {name, species, origin, image, created} = req.body;
-// }
+const postCharacter = async (req, res) => {
+  const { name, species, origin, image, episodes } = req.body;
+  const validator = name && species && origin && image ? true : false;
 
-module.exports = { getAllCharacters, getCharacterById };
+  if (!validator) return res.status(400).send(`Some data is missing!`);
+
+  try {
+    const obj = { name, species, origin, image };
+    const newCharacter = await Character.create(obj);
+
+    newCharacter.addEpisodes(episodes);
+
+    return res.send(newCharacter);
+  } catch (error) {
+    console.log(error);
+  }
+
+  // return res.send({ name, species, origin, image, created });
+};
+
+module.exports = { getAllCharacters, getCharacterById, postCharacter };
