@@ -36,7 +36,7 @@ const getCharactersApi = async (req, res) => {
 
     // Format
     charactersApi = charactersApi.map((char) => {
-      const { id, name, species, origin, image, created } = char;
+      const { id, name, species, origin, image, created, episode } = char;
       const obj = {
         id,
         name,
@@ -44,6 +44,11 @@ const getCharactersApi = async (req, res) => {
         origin: origin.name,
         image,
         created,
+        episodes: episode.map((ep) => {
+          let arr = ep.split("/");
+          let numEpisode = arr[arr.length - 1] * 1;
+          return numEpisode;
+        }),
       };
 
       return obj;
@@ -143,7 +148,8 @@ const getCharacterById = async (req, res) => {
 // POST Character
 const postCharacter = async (req, res) => {
   const { name, species, origin, image, episodes } = req.body;
-  const validator = name && species && origin && image ? true : false;
+  const validator =
+    name && species && origin && image && episodes ? true : false;
 
   if (!validator) return res.status(400).send(`Some data is missing!`);
 
@@ -157,8 +163,6 @@ const postCharacter = async (req, res) => {
   } catch (error) {
     console.log(error);
   }
-
-  // return res.send({ name, species, origin, image, created });
 };
 
 module.exports = { getAllCharacters, getCharacterById, postCharacter };
