@@ -159,7 +159,7 @@ const postCharacter = async (req, res) => {
 
     newCharacter.addEpisodes(episodes);
 
-    return res.send(newCharacter);
+    return res.send(`${name} character created successfully!`);
   } catch (error) {
     console.log(error);
   }
