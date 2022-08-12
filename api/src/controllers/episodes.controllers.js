@@ -1,7 +1,8 @@
 const axios = require("axios");
+const { Episode } = require("../db");
 
-const getEpisodes = async (req, res) => {
-  const quantity = 51;
+const loadEpisodes = async (n, db = false) => {
+  const quantity = n;
   let episodes = [];
 
   const api = await axios("https://rickandmortyapi.com/api/episode");
@@ -39,7 +40,18 @@ const getEpisodes = async (req, res) => {
     return obj;
   });
 
+  if (db) await Episode.bulkCreate(episodes);
+
+  return episodes;
+};
+
+// GET - EPISODES
+const getEpisodes = async (req, res) => {
+  // const episodes = await loadEpisodes(51);
+
+  const episodes = await Episode.findAll();
+
   return res.send(episodes);
 };
 
-module.exports = getEpisodes;
+module.exports = { getEpisodes, loadEpisodes };
